@@ -109,6 +109,8 @@ def key_pressed():
     if ((key == 'c') or (key == 'C')):
         points = []
         lines = []
+        p_colors = []
+        l_colors = []
         last_action = 'cleared all points'
     if (key == 'd'):
         redraw()
@@ -205,6 +207,12 @@ def constrain_square():
         increment = (leg2 * mp.sin(theta_prime),
                      leg2 * mp.cos(theta_prime))
 
+        temp_b_check = pointB[0] > pointA[0]
+
+        if pointC[1] > pointA[1]:
+            increment = (-1 * increment[0], increment[1])
+        if not (temp_b_check == (float(pointC[0] + increment[0]) > pointA[0])):
+            increment = (-1 * increment[0], -1 * increment[1])
         third_point = (float(pointC[0] + increment[0]),
                        float(pointC[1] + increment[1]))
         points[points.index(pointB)] = third_point
