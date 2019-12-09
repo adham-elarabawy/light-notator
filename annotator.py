@@ -42,6 +42,7 @@ index = 0
 
 points = []
 lines = []
+rectangles = []
 p_colors = []
 l_colors = []
 last_action = 'script started'
@@ -53,21 +54,22 @@ c_color = Color(0, 0, 255)  # pastel orange
 
 
 def load():
-    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color
+    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     load_images_from_folder(input_dir)
     last_action = 'loaded images'
 
 
 def setup():
-    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color
+    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     size(width, image_height)
     title('Light-notator')
     last_action = 'setup window'
     no_loop()
+    rect_mode(mode='CENTER')
 
 
 def draw():
-    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color
+    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     load_pixels()
     background(255)
     if index > len(images) - 1:
@@ -91,11 +93,17 @@ def draw():
         fill(l_colors[color_index])
         line(m_line[0], m_line[1])
         color_index += 1
+    for m_rectangle in rectangles:
+        no_fill()
+        translate(m_rectangle[0],
+                  m_rectangle[1])
+        rotate(-1 * m_rectangle[4])
+        rect((0, 0), m_rectangle[2], m_rectangle[3])
     fill(std_color)
 
 
 def mouse_pressed():
-    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color
+    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     print(f'mouse pressed at ({mouse_x},{mouse_y})')
     add_point(mouse_x, mouse_y, std_color)
     constrain_square()
@@ -103,12 +111,13 @@ def mouse_pressed():
 
 
 def key_pressed():
-    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color
+    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     if ((key == 'R') or (key == 'r')):
         remove_point()
     if ((key == 'c') or (key == 'C')):
         points = []
         lines = []
+        rectangles = []
         p_colors = []
         l_colors = []
         last_action = 'cleared all points'
@@ -125,7 +134,7 @@ def key_pressed():
 
 
 def load_images_from_folder(folder):
-    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color
+    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     for filename in os.listdir(folder):
         img_dir = os.path.join(folder, filename)
         file_type = str(mimetypes.guess_type(img_dir)[0])[0:5]
@@ -143,7 +152,7 @@ def load_images_from_folder(folder):
 
 
 def add_point(in_x, in_y, color):
-    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color
+    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     if in_x <= image_width and in_y <= image_height:
         points.append((in_x, in_y))
         p_colors.append(color)
@@ -151,13 +160,13 @@ def add_point(in_x, in_y, color):
 
 
 def add_line(temp_point_0, temp_point_1, color):
-    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, std_color
+    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     lines.append((temp_point_0, temp_point_1))
     l_colors.append(Color(0, 0, 0))
 
 
 def constrain_square():
-    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color
+    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     if len(points) == 3:
         dist = []
         pairs = []
@@ -217,16 +226,64 @@ def constrain_square():
                        float(pointC[1] + increment[1]))
         points[points.index(pointB)] = third_point
         pointB = third_point
+        pointD = (float(pointA[0] + increment[0]),
+                  float(pointA[1] + increment[1]))
+        add_point(pointD[0], pointD[1], std_color)
 
-        add_point(float(pointA[0] + increment[0]),
-                  float(pointA[1] + increment[1]), std_color)
+        validate_constraint()
+        angle_factor = 1
+        if (pointC[0] > pointA[0]) and (pointC[1] < pointB[1]):
+            angle_factor = -1
+
+        rectangle_tilt = angle_factor * get_angle([pointC[0], pointC[1]], [pointA[0], pointA[1]], [
+            pointA[0] + 20, pointA[1]])
+        rectangle_width = abs(distance.euclidean(pointC, pointA))
+        rectangle_height = abs(distance.euclidean(pointD, pointA))
+
+        averageX = 0
+        averageY = 0
+        for point in points:
+            averageX += point[0]
+            averageY += point[1]
+        averageX /= len(points)
+        averageY /= len(points)
+
+        rectangles.append((averageX, averageY, rectangle_width,
+                           rectangle_height, rectangle_tilt))
+
     else:
         last_action = 'constrain_square failed: not enough points'
         lines = []
 
 
+def validate_constraint():
+    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    angles = []
+    for pointA in points:
+        for pointB in points:
+            if pointB == pointA:
+                continue
+            for pointC in points:
+                if pointC == pointA or pointC == pointB:
+                    continue
+                angle = 180 * get_angle(pointA, pointB, pointC) / np.pi
+                if angle == 90 or (angle > 89.9 and angle < 90.1):
+                    angles.append(angle)
+    print(f'validated constraints: corner angles are {angles}')
+
+
+def get_angle(pointA, pointB, pointC):
+    v1 = [pointA[0] - pointB[0], pointA[1] - pointB[1]]
+    v2 = [pointC[0] - pointB[0], pointC[1] - pointB[1]]
+
+    angle = np.arccos(
+        np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2)))
+
+    return angle
+
+
 def remove_point():
-    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color
+    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     curr_pos = (mouse_x, mouse_y)
     dist = []
     for point in points:
