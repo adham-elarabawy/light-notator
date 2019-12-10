@@ -11,6 +11,7 @@ import argparse
 import os
 import mimetypes
 
+DEBUG = True
 
 parser = argparse.ArgumentParser(
     description='Custom frame annotator implemented in p5 and python.')
@@ -41,6 +42,7 @@ images = []
 index = 0
 
 points = []
+c_points = []
 lines = []
 rectangles = []
 p_colors = []
@@ -54,13 +56,13 @@ c_color = Color(0, 0, 255)  # pastel orange
 
 
 def load():
-    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     load_images_from_folder(input_dir)
     last_action = 'loaded images'
 
 
 def setup():
-    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     size(width, image_height)
     title('Light-notator')
     last_action = 'setup window'
@@ -69,7 +71,7 @@ def setup():
 
 
 def draw():
-    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     load_pixels()
     background(255)
     if index > len(images) - 1:
@@ -83,27 +85,34 @@ def draw():
     text(f'# points: {len(points)}', (5, 25))
     text(f'last action: ({last_action})', (5, 35))
 
+    for m_rectangle in rectangles:
+        no_fill()
+        stroke_weight(2)
+        stroke(117, 220, 117)
+        translate(m_rectangle[0],
+                  m_rectangle[1])
+        rotate(m_rectangle[4])
+        rect((0, 0), m_rectangle[2], m_rectangle[3])
+        rotate(-1 * m_rectangle[4])
+        translate(-1 * m_rectangle[0], -1 * m_rectangle[1])
     color_index = 0
     for m_point in points:
         fill(p_colors[color_index])
+        stroke_weight(1)
+        stroke(41)
         ellipse((m_point[0], m_point[1]), 5, 5)
         color_index += 1
     color_index = 0
+
     for m_line in lines:
         fill(l_colors[color_index])
         line(m_line[0], m_line[1])
         color_index += 1
-    for m_rectangle in rectangles:
-        no_fill()
-        translate(m_rectangle[0],
-                  m_rectangle[1])
-        rotate(-1 * m_rectangle[4])
-        rect((0, 0), m_rectangle[2], m_rectangle[3])
     fill(std_color)
 
 
 def mouse_pressed():
-    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     print(f'mouse pressed at ({mouse_x},{mouse_y})')
     add_point(mouse_x, mouse_y, std_color)
     constrain_square()
@@ -111,7 +120,7 @@ def mouse_pressed():
 
 
 def key_pressed():
-    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     if ((key == 'R') or (key == 'r')):
         remove_point()
     if ((key == 'c') or (key == 'C')):
@@ -134,7 +143,7 @@ def key_pressed():
 
 
 def load_images_from_folder(folder):
-    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     for filename in os.listdir(folder):
         img_dir = os.path.join(folder, filename)
         file_type = str(mimetypes.guess_type(img_dir)[0])[0:5]
@@ -152,7 +161,7 @@ def load_images_from_folder(folder):
 
 
 def add_point(in_x, in_y, color):
-    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     if in_x <= image_width and in_y <= image_height:
         points.append((in_x, in_y))
         p_colors.append(color)
@@ -160,13 +169,13 @@ def add_point(in_x, in_y, color):
 
 
 def add_line(temp_point_0, temp_point_1, color):
-    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     lines.append((temp_point_0, temp_point_1))
     l_colors.append(Color(0, 0, 0))
 
 
 def constrain_square():
-    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     if len(points) == 3:
         dist = []
         pairs = []
@@ -176,7 +185,7 @@ def constrain_square():
                 pairs.append((pointA, pointB))
 
         hypot = max(dist)
-        if (pairs[dist.index(max(dist))][0][1] < pairs[dist.index(max(dist))][1][1]):
+        if (pairs[dist.index(max(dist))][0][1] < pairs[dist.index(max(dist))][1][1]) or ((pairs[dist.index(max(dist))][0][0] < pairs[dist.index(max(dist))][1][0])):
             pointA = pairs[dist.index(max(dist))][0]
             pointB = pairs[dist.index(max(dist))][1]
         else:
@@ -187,10 +196,10 @@ def constrain_square():
                 pointC = point
             else:
                 print('Constrain logic failed. Could not identify third point.')
-
-        p_colors[points.index(pointA)] = a_color
-        p_colors[points.index(pointB)] = b_color
-        p_colors[points.index(pointC)] = c_color
+        if DEBUG:
+            p_colors[points.index(pointA)] = a_color
+            p_colors[points.index(pointB)] = b_color
+            p_colors[points.index(pointC)] = c_color
         leg1 = abs(distance.euclidean(pointC, pointA))
 
         hypot = abs(distance.euclidean(pointB, pointA))
@@ -198,7 +207,8 @@ def constrain_square():
         leg1_vector = (pointC[0] - pointA[0], pointC[1] - pointA[1])
         hypot_vector = (pointB[0] - pointA[0], pointB[1] - pointA[1])
 
-        add_line(pointA, pointB, std_color)
+        if DEBUG:
+            add_line(pointA, pointB, std_color)
         print(
             f'leg vector is {leg1_vector} and hyp_vector is {hypot_vector}')
         print(
@@ -232,7 +242,7 @@ def constrain_square():
 
         validate_constraint()
         angle_factor = 1
-        if (pointC[0] > pointA[0]) and (pointC[1] < pointB[1]):
+        if (pointC[0] < pointB[0]) and (pointC[1] < pointA[1]):
             angle_factor = -1
 
         rectangle_tilt = angle_factor * get_angle([pointC[0], pointC[1]], [pointA[0], pointA[1]], [
@@ -247,17 +257,21 @@ def constrain_square():
             averageY += point[1]
         averageX /= len(points)
         averageY /= len(points)
-
-        rectangles.append((averageX, averageY, rectangle_width,
-                           rectangle_height, rectangle_tilt))
+        add_rectangle(averageX, averageY, rectangle_width,
+                      rectangle_height, rectangle_tilt)
 
     else:
         last_action = 'constrain_square failed: not enough points'
         lines = []
 
 
+def add_rectangle(in_x, in_y, rectangle_width, rectangle_height, rectangle_tilt):
+    rectangles.append((in_x, in_y, rectangle_width,
+                       rectangle_height, rectangle_tilt))
+
+
 def validate_constraint():
-    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     angles = []
     for pointA in points:
         for pointB in points:
@@ -283,7 +297,7 @@ def get_angle(pointA, pointB, pointC):
 
 
 def remove_point():
-    global last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     curr_pos = (mouse_x, mouse_y)
     dist = []
     for point in points:
