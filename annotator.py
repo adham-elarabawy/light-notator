@@ -9,9 +9,10 @@ import PIL
 from PIL import Image
 import argparse
 import os
+import csv
 import mimetypes
 
-DEBUG = True
+DEBUG = False
 
 parser = argparse.ArgumentParser(
     description='Custom frame annotator implemented in p5 and python.')
@@ -60,6 +61,7 @@ c_color = Color(0, 0, 255)  # pastel orange
 def load():
     global DEBUG, last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     load_images_from_folder(input_dir)
+    rectangles = load_bbox_from_file()
     last_action = 'loaded images'
 
 
@@ -74,7 +76,6 @@ def setup():
 
 def draw():
     global DEBUG, last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
-    load_pixels()
     background(255)
     if index > len(images) - 1:
         index = 0
@@ -91,7 +92,7 @@ def draw():
     for m_rectangle in rectangles:
         no_fill()
         stroke_weight(2)
-        stroke(117, 220, 117)
+        stroke(117, 255, 117)
         translate(m_rectangle[0],
                   m_rectangle[1])
         rotate(m_rectangle[4])
@@ -116,7 +117,8 @@ def draw():
 
 def mouse_pressed():
     global DEBUG, last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
-    print(f'mouse pressed at ({mouse_x},{mouse_y})')
+    if DEBUG:
+        print(f'mouse pressed at ({mouse_x},{mouse_y})')
     add_point(mouse_x, mouse_y, std_color)
     constrain_square()
     redraw()
@@ -138,10 +140,14 @@ def key_pressed():
 
     if (key == "2"):
         last_action = 'moved to next frame'
+        write_bbox_to_file()
         index += 1
+        rectangles = load_bbox_from_file()
     if (key == "1"):
         last_action = 'moved to previous frame'
+        write_bbox_to_file()
         index -= 1
+        rectangles = load_bbox_from_file()
     redraw()
 
 
@@ -191,8 +197,6 @@ def constrain_square():
             # arbitrarily define temporary points in order to find pointC
             if not ((point == pairs[dist.index(max(dist))][0]) or (point == pairs[dist.index(max(dist))][1])):
                 pointC = point
-            else:
-                print('Constrain logic failed. Could not identify third point.')
 
         hypot = max(dist)
         temp_distance_0 = abs(distance.euclidean(
@@ -227,7 +231,6 @@ def constrain_square():
                 f'pointA is {pointA} and pointB is {pointB} and pointC is {pointC}')
         theta = sym.acos(
             (leg1_vector[0]*hypot_vector[0]+leg1_vector[1]*hypot_vector[1])/(leg1*hypot))
-        print(last_action)
 
         std_unit_vector = (1, 0)
         theta_prime = sym.acos((leg1_vector[0]*std_unit_vector[0] +
@@ -276,6 +279,7 @@ def constrain_square():
         averageY /= len(points)
         add_rectangle(averageX, averageY, rectangle_width,
                       rectangle_height, rectangle_tilt)
+        points = []
 
     else:
         last_action = 'constrain_square failed: not enough points'
@@ -300,7 +304,8 @@ def validate_constraint():
                 angle = 180 * get_angle(pointA, pointB, pointC) / np.pi
                 if angle == 90 or (angle > 89.9 and angle < 90.1):
                     angles.append(angle)
-    print(f'validated constraints: corner angles are {angles[0:4]}')
+    if DEBUG:
+        print(f'validated constraints: corner angles are {angles[0:4]}')
 
 
 def get_angle(pointA, pointB, pointC):
@@ -325,6 +330,41 @@ def remove_point():
     points.pop(dist.index(min(dist)))
     last_action = 'removed closest point'
     constrain_square()
+
+
+def load_bbox_from_file():
+    global DEBUG, last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    file_dir = dirs[index].replace('cache', 'input')
+    file_dir = os.path.splitext(file_dir)[0]+'.csv'
+    if os.path.isfile(file_dir):
+        temp_rectangles = []
+        if DEBUG:
+            print('There are encoded annotations in corresponding text file.')
+        with open(file_dir) as csvfile:
+            readCSV = csv.reader(csvfile, delimiter=',')
+            for row in readCSV:
+                temp_rectangles.append(
+                    (float(row[0]), float(row[1]), float(row[2]), float(row[3]), float(row[4])))
+        return temp_rectangles
+    else:
+        if DEBUG:
+            print('There are no encoded annotations in corresponding text file.')
+        return []
+
+
+def write_bbox_to_file():
+    global DEBUG, last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    file_dir = dirs[index].replace('cache', 'input')
+    file_dir = os.path.splitext(file_dir)[0]+'.csv'
+    if os.path.isfile(file_dir):
+        os.remove(file_dir)
+    with open(file_dir, 'w') as csvfile:
+        filewriter = csv.writer(csvfile, delimiter=',',
+                                quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        for m_rectangle in rectangles:
+            tmp_lst = [m_rectangle[0], m_rectangle[1],
+                       m_rectangle[2], m_rectangle[3], m_rectangle[4]]
+            filewriter.writerow(tmp_lst)
 
 
 if __name__ == '__main__':
