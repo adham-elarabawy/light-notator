@@ -29,7 +29,9 @@ root = Tk()
 width = root.winfo_screenwidth()
 height = root.winfo_screenheight()
 
-image_width = width - 200
+window_offset = 200
+
+image_width = width - window_offset
 image_height = (height/width) * image_width
 
 args = parser.parse_args()
@@ -62,8 +64,8 @@ def load():
 
 
 def setup():
-    global DEBUG, last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
-    size(width, image_height)
+    global DEBUG, window_offset, last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    size(width - window_offset, image_height)
     title('Light-notator')
     last_action = 'setup window'
     no_loop()
@@ -80,6 +82,7 @@ def draw():
         index = len(images) - 1
 
     image(images[index], (0, 0), (image_width, image_height))
+
     text(f'index: {index}', (5, 5))
     text(f'current image: ({dirs[index]})', (5, 15))
     text(f'# points: {len(points)}', (5, 25))
@@ -184,18 +187,27 @@ def constrain_square():
                 dist.append(abs(distance.euclidean(pointA, pointB)))
                 pairs.append((pointA, pointB))
 
-        hypot = max(dist)
-        if (pairs[dist.index(max(dist))][0][1] < pairs[dist.index(max(dist))][1][1]) or ((pairs[dist.index(max(dist))][0][0] < pairs[dist.index(max(dist))][1][0])):
-            pointA = pairs[dist.index(max(dist))][0]
-            pointB = pairs[dist.index(max(dist))][1]
-        else:
-            pointA = pairs[dist.index(max(dist))][1]
-            pointB = pairs[dist.index(max(dist))][0]
         for point in points:
-            if not ((point == pointA) or (point == pointB)):
+            # arbitrarily define temporary points in order to find pointC
+            if not ((point == pairs[dist.index(max(dist))][0]) or (point == pairs[dist.index(max(dist))][1])):
                 pointC = point
             else:
                 print('Constrain logic failed. Could not identify third point.')
+
+        hypot = max(dist)
+        temp_distance_0 = abs(distance.euclidean(
+            pointC, pairs[dist.index(max(dist))][0]))
+        temp_distance_1 = abs(distance.euclidean(
+            pointC, pairs[dist.index(max(dist))][1]))
+        if (temp_distance_0 > temp_distance_1):
+            pointA = pairs[dist.index(max(dist))][0]
+            pointB = pairs[dist.index(max(dist))][1]
+            angle_flip = False
+        else:
+            pointA = pairs[dist.index(max(dist))][1]
+            pointB = pairs[dist.index(max(dist))][0]
+            angle_flip = True
+
         if DEBUG:
             p_colors[points.index(pointA)] = a_color
             p_colors[points.index(pointB)] = b_color
@@ -209,13 +221,12 @@ def constrain_square():
 
         if DEBUG:
             add_line(pointA, pointB, std_color)
-        print(
-            f'leg vector is {leg1_vector} and hyp_vector is {hypot_vector}')
-        print(
-            f'pointA is {pointA} and pointB is {pointB} and pointC is {pointC}')
+            print(
+                f'leg vector is {leg1_vector} and hyp_vector is {hypot_vector}')
+            print(
+                f'pointA is {pointA} and pointB is {pointB} and pointC is {pointC}')
         theta = sym.acos(
             (leg1_vector[0]*hypot_vector[0]+leg1_vector[1]*hypot_vector[1])/(leg1*hypot))
-        last_action = f'calculated theta = {theta}'
         print(last_action)
 
         std_unit_vector = (1, 0)
@@ -241,12 +252,18 @@ def constrain_square():
         add_point(pointD[0], pointD[1], std_color)
 
         validate_constraint()
-        angle_factor = 1
-        if (pointC[0] < pointB[0]) and (pointC[1] < pointA[1]):
-            angle_factor = -1
+        angle_factor = -1
 
-        rectangle_tilt = angle_factor * get_angle([pointC[0], pointC[1]], [pointA[0], pointA[1]], [
+        rectangle_tilt = get_angle([pointC[0], pointC[1]], [pointA[0], pointA[1]], [
             pointA[0] + 20, pointA[1]])
+        if DEBUG:
+            print(f'rectangle tilt is: {180 * rectangle_tilt / mp.pi}')
+
+        rectangle_tilt *= angle_factor
+
+        if DEBUG:
+            print(f'shifted rectangle tilt is: {180 * rectangle_tilt / mp.pi}')
+
         rectangle_width = abs(distance.euclidean(pointC, pointA))
         rectangle_height = abs(distance.euclidean(pointD, pointA))
 
@@ -283,7 +300,7 @@ def validate_constraint():
                 angle = 180 * get_angle(pointA, pointB, pointC) / np.pi
                 if angle == 90 or (angle > 89.9 and angle < 90.1):
                     angles.append(angle)
-    print(f'validated constraints: corner angles are {angles}')
+    print(f'validated constraints: corner angles are {angles[0:4]}')
 
 
 def get_angle(pointA, pointB, pointC):
@@ -292,6 +309,9 @@ def get_angle(pointA, pointB, pointC):
 
     angle = np.arccos(
         np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2)))
+
+    if pointA[1] > pointC[1]:
+        angle *= -1
 
     return angle
 
