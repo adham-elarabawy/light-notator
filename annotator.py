@@ -183,14 +183,15 @@ def load_images_from_folder(folder):
             temp_img = Image.open(img_dir)
             wsize = int((float(temp_img.size[0]) * float(args.scale)))
             hsize = int((float(temp_img.size[1]) * float(args.scale)))
-            img_size.append((temp_img.size[0], temp_img.size[1]))
             temp_img = temp_img.resize((wsize, hsize), PIL.Image.ANTIALIAS)
             new_dir = os.path.join(args.cache, filename)
             temp_img.save(f'{new_dir}')
 
+            img_size.append((image_width, image_height))
             dirs.append(new_dir)
             images.append(load_image(new_dir))
-    dirs, images = (list(t) for t in zip(*sorted(zip(dirs, images))))
+    dirs, images, img_size = (list(t)
+                              for t in zip(*sorted(zip(dirs, images, img_size))))
 
 
 def add_point(in_x, in_y, color):
