@@ -39,6 +39,7 @@ args = parser.parse_args()
 
 input_dir = args.input
 output_dir = args.output
+cache_dir = args.cache
 
 dirs = []
 images = []
@@ -58,8 +59,19 @@ b_color = Color(0, 255, 0)  # rose
 c_color = Color(0, 0, 255)  # pastel orange
 
 
+def validate_dirs():
+    global DEBUG, input_dir, output_dir, cache_dir
+    dir_list = [input_dir, output_dir, cache_dir]
+    for directory in dir_list:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+    if DEBUG:
+        print('[validate_dirs] Validated Directories')
+
+
 def load():
     global DEBUG, last_action, points, dirs, images, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    validate_dirs()
     load_images_from_folder(input_dir)
     rectangles = load_bbox_from_file()
     last_action = 'loaded images'
