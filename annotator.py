@@ -373,8 +373,9 @@ def load_bbox_from_file():
         with open(file_dir) as csvfile:
             readCSV = csv.reader(csvfile, delimiter=',')
             for row in readCSV:
-                temp_rectangles.append(
-                    (float(row[0]), float(row[1]), float(row[2]), float(row[3]), float(row[4])))
+                if not (row == []):
+                    temp_rectangles.append(
+                        (float(row[0]), float(row[1]), float(row[2]), float(row[3]), float(row[4])))
         return temp_rectangles
     else:
         if DEBUG:
