@@ -41,3 +41,17 @@ For other Linux based systems, find and install the GLFW package using the respe
 All of the annotations are done with relative format:
 (x coordinate of center of bounding box / width of screen), (y coordinate of center of bounding box / height of screen), (width bounding box / width of screen), (height of bounding box / height of screen), (angle of rotated bounding box)
 
+# Issues
+Window Sizing Issues
+--------------------
+When testing on other machines, I ran into some issues with the auto-scaling since tKinter doesn't always return the right screen resolution. If your annotator is excessively small/large, then go into the `annotator.py` and change the values of `lines 30 & 31` to indicate your actual screen resolution. That should resolve the window sizing issues. 
+
+Nothing happens when you run the annotator
+------------------------------------------
+If no errors are getting thrown when you run the annotator, but the annotating window STILL hasn't popped up for a while, it is likely due to a large number of images that you have in the input directory. Behind the hood, the annotator actually goes through every single frame and downscales it (to the cache directory) in order to improve live performance. Just give it a minute or two to go through all the images you pasted and downscale them. Patience :)
+
+The annotator runs slow!
+------------------------
+This is likely due to the scaling factor. You can mitigate this issue by running the `annotator.py` python script with the following argument: `--scale value`
+
+Replace the "value" with the value to downscale. The default is 0.3, which means that the image that you see is 0.3x the full resolution. The smaller this number is, the worse the image will look, but the faster the annotator will run. If you want more resolution, make this value bigger (but still <=1).
