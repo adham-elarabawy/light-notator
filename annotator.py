@@ -44,7 +44,7 @@ output_dir = args.output
 cache_dir = args.cache
 
 dirs = []
-images = []
+image_buffer = []
 img_size = []
 index = 0
 
@@ -79,7 +79,7 @@ def validate_dirs():
 
 
 def load():
-    global DEBUG, last_action, points, dirs, images, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, image_buffer, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     validate_dirs()
     load_images_from_folder(input_dir)
     rectangles = load_bbox_from_file()
@@ -87,7 +87,7 @@ def load():
 
 
 def setup():
-    global DEBUG, last_action, points, dirs, images, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, image_buffer, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     size(width - window_offset, image_height)
     title('Light-notator')
     last_action = 'setup window'
@@ -97,18 +97,18 @@ def setup():
 
 def check_index():
     global index
-    if index > len(images) - 1:
+    if index > len(dirs) - 1:
         index = 0
     if index < 0:
-        index = len(images) - 1
+        index = len(dirs) - 1
 
 
 def draw():
-    global DEBUG, last_action, points, dirs, images, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, image_buffer, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     background(255)
     check_index()
 
-    image(images[index], (0, 0), (image_width, image_height))
+    image(image_buffer[5], (0, 0), (image_width, image_height))
 
     text(f'index: {index}', (5, 5))
     text(f'current image: ({dirs[index]})', (5, 15))
@@ -145,7 +145,7 @@ def draw():
 
 
 def mouse_pressed():
-    global DEBUG, last_action, points, dirs, images, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, image_buffer, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     if DEBUG:
         print(f'mouse pressed at ({mouse_x},{mouse_y})')
     print(focused)
@@ -156,7 +156,7 @@ def mouse_pressed():
 
 
 def key_pressed():
-    global DEBUG, last_action, points, dirs, images, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, image_buffer, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     if ((key == 'R') or (key == 'r')):
         remove_point()
     if ((key == 'c') or (key == 'C')):
@@ -173,19 +173,35 @@ def key_pressed():
         last_action = 'moved to next frame'
         write_bbox_to_file()
         index += 1
+        shift_buffer(1)
         check_index()
         rectangles = load_bbox_from_file()
     if (key == "1"):
         last_action = 'moved to previous frame'
         write_bbox_to_file()
         index -= 1
+        shift_buffer(-1)
         check_index()
         rectangles = load_bbox_from_file()
     redraw()
 
 
+def shift_buffer(dir_shift):
+    global DEBUG, last_action, points, dirs, image_buffer, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    if dir_shift == 1:
+        image_buffer.pop(0)
+        index_to_add = index + 5
+        if index_to_add > len(dirs):
+            index_to_add -= len(dirs)
+        image_buffer.append(load_image(dirs[index_to_add]))
+    if dir_shift == -1:
+        image_buffer.pop(10)
+        index_to_add = index - 5
+        image_buffer.insert(0, load_image(dirs[index_to_add]))
+
+
 def load_images_from_folder(folder):
-    global DEBUG, last_action, points, dirs, images, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, image_buffer, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     for filename in os.listdir(folder):
         img_dir = os.path.join(folder, filename)
         file_type = str(mimetypes.guess_type(img_dir)[0])[0:5]
@@ -199,13 +215,14 @@ def load_images_from_folder(folder):
 
             img_size.append((image_width, image_height))
             dirs.append(new_dir)
-            images.append(load_image(new_dir))
-    dirs, images, img_size = (list(t)
-                              for t in zip(*sorted(zip(dirs, images, img_size))))
+    for buffer_image_index in range(-5, 6):
+        image_buffer.append(load_image(dirs[buffer_image_index]))
+    dirs, img_size = (list(t)
+                      for t in zip(*sorted(zip(dirs, img_size))))
 
 
 def add_point(in_x, in_y, color):
-    global DEBUG, last_action, points, dirs, images, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, image_buffer, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     if in_x <= image_width and in_y <= image_height:
         points.append((in_x, in_y))
         p_colors.append(color)
@@ -213,13 +230,13 @@ def add_point(in_x, in_y, color):
 
 
 def add_line(temp_point_0, temp_point_1, color):
-    global DEBUG, last_action, points, dirs, images, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, image_buffer, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     lines.append((temp_point_0, temp_point_1))
     l_colors.append(Color(0, 0, 0))
 
 
 def constrain_square():
-    global DEBUG, last_action, points, dirs, images, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, image_buffer, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     if len(points) == 3:
         dist = []
         pairs = []
@@ -324,7 +341,7 @@ def constrain_square():
 
 
 def add_rectangle(in_x, in_y, rectangle_width, rectangle_height, rectangle_tilt):
-    global DEBUG, last_action, points, dirs, images, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, image_buffer, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     x_relative = in_x/img_size[index][0]
     y_relative = in_y/img_size[index][1]
     rect_width_relative = rectangle_width/img_size[index][0]
@@ -354,7 +371,7 @@ def button_callback():
 
 
 def validate_constraint():
-    global DEBUG, last_action, points, dirs, images, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, image_buffer, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     angles = []
     for pointA in points:
         for pointB in points:
@@ -384,7 +401,7 @@ def get_angle(pointA, pointB, pointC):
 
 
 def remove_point():
-    global DEBUG, last_action, points, dirs, images, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, image_buffer, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     curr_pos = (mouse_x, mouse_y)
     dist = []
     for point in points:
@@ -395,7 +412,7 @@ def remove_point():
 
 
 def load_bbox_from_file():
-    global DEBUG, last_action, points, dirs, images, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, image_buffer, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     file_dir = dirs[index].replace('cache', 'input')
     file_dir = os.path.splitext(file_dir)[0]+'.csv'
     if os.path.isfile(file_dir):
@@ -415,7 +432,7 @@ def load_bbox_from_file():
 
 
 def write_bbox_to_file():
-    global DEBUG, last_action, points, dirs, images, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
+    global DEBUG, last_action, points, dirs, image_buffer, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     file_dir = dirs[index].replace('cache', 'input')
     file_dir = os.path.splitext(file_dir)[0]+'.csv'
     if os.path.isfile(file_dir):
