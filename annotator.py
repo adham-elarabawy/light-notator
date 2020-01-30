@@ -191,8 +191,9 @@ def shift_buffer(dir_shift):
     if dir_shift == 1:
         image_buffer.pop(0)
         index_to_add = index + 5
-        if index_to_add > len(dirs):
-            index_to_add -= len(dirs)
+        if index_to_add > len(dirs) - 1:
+            index_to_add -= (len(dirs) - 1)
+            print(index_to_add)
         image_buffer.append(load_image(dirs[index_to_add]))
     if dir_shift == -1:
         image_buffer.pop(10)
