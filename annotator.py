@@ -3,7 +3,7 @@ from p5 import *
 import sympy as sym
 import mpmath as mp
 import numpy as np
-from tkinter import Tk
+from tkinter import *
 from scipy.spatial import distance
 import PIL
 from PIL import Image
@@ -29,6 +29,8 @@ parser.add_argument('--scale', dest='scale',
 root = Tk()
 width = root.winfo_screenwidth()
 height = root.winfo_screenheight()
+root.destroy()
+root.quit()
 
 window_offset = 200
 
@@ -58,6 +60,12 @@ std_color = Color(255, 255, 255)  # white
 a_color = Color(255, 0, 0)  # azure
 b_color = Color(0, 255, 0)  # rose
 c_color = Color(0, 0, 255)  # pastel orange
+
+ROOT = ""
+LOOP_ACTIVE = False
+value_returned = ""
+e = ""
+IS_CLICKED = False
 
 
 def validate_dirs():
@@ -140,9 +148,11 @@ def mouse_pressed():
     global DEBUG, last_action, points, dirs, images, img_size, index, input_dir, output_dir, args, width, height, image_width, image_height, lines, p_colors, l_colors, a_color, b_color, c_color, rectangles
     if DEBUG:
         print(f'mouse pressed at ({mouse_x},{mouse_y})')
-    add_point(mouse_x, mouse_y, std_color)
-    constrain_square()
-    redraw()
+    print(focused)
+    if focused:
+        add_point(mouse_x, mouse_y, std_color)
+        constrain_square()
+        redraw()
 
 
 def key_pressed():
@@ -302,6 +312,8 @@ def constrain_square():
             averageY += point[1]
         averageX /= len(points)
         averageY /= len(points)
+        barcode_id = ask_for_barcode()
+        print(barcode_id)
         add_rectangle(averageX, averageY, rectangle_width,
                       rectangle_height, rectangle_tilt)
         points = []
@@ -319,6 +331,26 @@ def add_rectangle(in_x, in_y, rectangle_width, rectangle_height, rectangle_tilt)
     rect_height_relative = rectangle_height/img_size[index][1]
     rectangles.append((x_relative, y_relative, rect_width_relative,
                        rect_height_relative, rectangle_tilt))
+
+
+def ask_for_barcode():
+    global ROOT, LOOP_ACTIVE, IS_CLICKED, value_returned, e
+    ROOT = Tk()
+    b = Button(ROOT, text="OK", width=10, command=button_callback)
+    b.pack()
+    e = Entry(ROOT, width=50)
+    e.pack()
+    e.focus_set()
+    ROOT.mainloop()
+    return value_returned
+
+
+def button_callback():
+    global ROOT, LOOP_ACTIVE, IS_CLICKED, value_returned, e
+    value_returned = e.get()
+    ROOT.destroy()
+    ROOT.quit()
+    print(focused)
 
 
 def validate_constraint():
