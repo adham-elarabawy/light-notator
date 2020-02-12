@@ -4,8 +4,13 @@ A custom frame annotator implemented with p5 and python.
 
 # Installation:
 1) Clone this repository. It doesn't really matter where you clone it to, it is a standalone folder.
-2) Enter the command line (it doesn't matter what system you are on, windows/linux/mac). Navigate to the directory that you cloned this repository to. Run the following command:
-`pip install -r requirements.txt`
+2) Enter the command line (it doesn't matter what system you are on, windows/linux/mac). Navigate to the directory that you cloned this repository to. 
+
+Run the following command:
+`pip3 install -r requirements.txt`
+
+Run the following command:
+`sudo apt-get install python3-tk`
 
 All the python dependencies should be installed after the command above finished installing. 
 
